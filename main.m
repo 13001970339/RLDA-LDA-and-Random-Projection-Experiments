@@ -12,7 +12,7 @@ clear all
 clc
 
 
-p=50;
+p=150;
 vector_n=[30 50 70 90 110 130 150]';
 noTrainingSets=1000;
 delta2=9;
@@ -23,11 +23,12 @@ gamma=1;
 vector_trueErrorRLDA=zeros(noTrainingSets,1);
 vector_pluginErrorRLDA=zeros(noTrainingSets,1);
 vector_dasymEst=zeros(noTrainingSets,1);
-vector_expectedError=zeros(length(vector_n),3);
-vector_variance=zeros(length(vector_n),3);
-vector_devVariance=zeros(length(vector_n),2);%this does not apply to true error
-vector_bias=zeros(length(vector_n),2);%this does not apply to true error
-vector_RMS=zeros(length(vector_n),2);%this does not apply to true error
+vector_resubError=zeros(noTrainingSets,1);
+vector_expectedError=zeros(length(vector_n),4);
+vector_variance=zeros(length(vector_n),4);
+vector_devVariance=zeros(length(vector_n),3);%this does not apply to true error
+vector_bias=zeros(length(vector_n),3);%this does not apply to true error
+vector_RMS=zeros(length(vector_n),3);%this does not apply to true error
 alpha0=0.5; %because c=0 (see paper for how to compute this from c)
 alpha1=1-alpha0;
 
@@ -47,27 +48,36 @@ for i=1:length(vector_n)
        vector_pluginErrorRLDA(trainingSetNo)=pluginErrorRLDA(alpha0,alpha1,xBar0,xBar1,C,H,c,kappa);
        %compute generalized consistent estimator (double asymptotic) 
        vector_dasymEst(trainingSetNo)=dasymEst(alpha0,alpha1,n0,n1,xBar0,xBar1,C,H,c,kappa,gamma);
+       %compute resubstitution error of RLDA
+       vector_resubError(trainingSetNo)=resubError(xBar0,xBar1,H,X0,X1,n0,n1,vector_n(i),c,kappa);
+       
    end
    vector_expectedError(i,1)=mean(vector_trueErrorRLDA); %rows correspond to specific n values while columns correspond to specific estimators
    vector_expectedError(i,2)=mean(vector_pluginErrorRLDA);
    vector_expectedError(i,3)=mean(vector_dasymEst);
+   vector_expectedError(i,4)=mean(vector_resubError);
    vector_bias(i,1)=vector_expectedError(i,2)-vector_expectedError(i,1);
    vector_bias(i,2)=vector_expectedError(i,3)-vector_expectedError(i,1);
+   vector_bias(i,3)=vector_expectedError(i,4)-vector_expectedError(i,1);
    
    vector_variance(i,1)=var(vector_trueErrorRLDA);%rows correspond to specific n values while columns correspond to specific estimators
    vector_variance(i,2)=var(vector_pluginErrorRLDA);
    vector_variance(i,3)=var(vector_dasymEst);
+   vector_variance(i,4)=var(vector_resubError);
    cov12=corr(vector_trueErrorRLDA,vector_pluginErrorRLDA)*sqrt(vector_variance(i,1)*vector_variance(i,2));
    cov13=corr(vector_trueErrorRLDA,vector_dasymEst)*sqrt(vector_variance(i,1)*vector_variance(i,3));
+   cov14=corr(vector_trueErrorRLDA,vector_resubError)*sqrt(vector_variance(i,1)*vector_variance(i,4));
    
    vector_devVariance(i,1)=vector_variance(i,1)+vector_variance(i,2)-2*cov12;%note that the true error column is omitted here
    vector_devVariance(i,2)=vector_variance(i,1)+vector_variance(i,3)-2*cov13;
+   vector_devVariance(i,3)=vector_variance(i,1)+vector_variance(i,4)-2*cov14;
    vector_RMS(i,1)=sqrt(vector_bias(i,1)^2+vector_devVariance(i,1)^2);
    vector_RMS(i,2)=sqrt(vector_bias(i,2)^2+vector_devVariance(i,2)^2);
+   vector_RMS(i,3)=sqrt(vector_bias(i,3)^2+vector_devVariance(i,3)^2);
 end
 
-plot(repmat(vector_n,1,3),vector_expectedError)
-legend('true error','plug-in','dasym-est')
+plot(repmat(vector_n,1,4),vector_expectedError)
+legend('true error','plug-in','dasym-est','resub')
 figure
-plot(repmat(vector_n,1,2),vector_RMS)
-legend('plug-in','dasym-est')
+plot(repmat(vector_n,1,3),vector_RMS)
+legend('plug-in','dasym-est','resub')

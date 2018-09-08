@@ -1,5 +1,6 @@
 %This function computes the proposed generalized (double asymptotic) consistent estimator
 %of the true error according to (1) and (12)
+
 function e=dasymEst(alpha0,alpha1,n0,n1,xBar0,xBar1,C,H,c,kappa,gamma)
     p=length(xBar0);
     delta=(p/(n0+n1-2)-trace(H)/(n0+n1-2))/(gamma*(1-p/(n0+n1-2)+trace(H)/(n0+n1-2)));
