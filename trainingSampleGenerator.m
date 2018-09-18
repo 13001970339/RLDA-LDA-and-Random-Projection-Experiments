@@ -9,8 +9,9 @@
 %contained in the columns of X1
 
 function [mu0,mu1,Sigma,X0,X1,n0,n1]=trainingSampleGenerator(p,n,alpha0,delta2)
-    %compute the common covariance matrix
+   %compute the common covariance matrix
     Sigma=ones(p)*0.1+eye(p)*0.9; %diagonal entries are 1 and off-diagonal entries are 0.1
+%     Sigma=eye(p);
     
     %compute the class means
     one=ones(p,1);

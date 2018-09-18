@@ -1,1 +1,2 @@
 This code is based on the paper "Generalized Consistent Error Estimator of Linear Discriminant Analysis".
+The random projection code is based on the paper "Random projection in dimensionality reduction: Applications to image and text data".
