@@ -1,0 +1,1 @@
+This code computes the misclassification rate of RLDA versus an LDA classifier trained on randomly projected training data. We want to see how random projection + LDA performs as well as how performance varies with varying k (the reduced dimension) and population covariance matrix. 

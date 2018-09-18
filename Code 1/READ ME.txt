@@ -1,0 +1,8 @@
+This code is based on the paper "Generalized Consistent Error Estimator of Linear Discriminant Analysis".
+The random projection code is based on the paper "Random projection in dimensionality reduction: Applications to image and text data".
+
+THIS CODE HAS SOME ERRORS:
+(1) True error for RLDA is not computed this way- fix it if you want to use it
+(2) The error metrics are relative to true error. It does not make sense to do the random projection followed by LDA resubstitution error relative to the RLDA true error. What you need to do is find the misclassification rate for each of RLDA and random projection followed by LDA using NEW test data. This is a good estimate for the actual error. We just want to see if random projection followed by LDA performs well.
+
+The next code 'Code 2' will do that.

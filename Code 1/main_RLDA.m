@@ -1,36 +1,40 @@
- %This script generates 'noTrainingSets' number of training sample sets (for each value in a set of values of n) for which the
-%following error estimators (in addition to the true error) are computed:
-%plug-in error estimator, leave-one-out cross validation, 0.632 bootstrap,
-%0.632+ bootstrap, 5-fold cross validation with 10 repetitions, bolstered
-%resubstitution, and finally, the proposed generalized consistent error
-%estimator.
+%This script generates 'noTrainingSets' number of training sample sets (for each value in a set of values of n) for which the
+%following error estimators for RLDA error (in addition to the true error) are computed:
+%RLDA plug-in error estimator, RLDA resubstitution error, and the proposed generalized consistent error
+%estimator for RLDA. In addition, we have the resubstitution error estimator for random projection follwed by LDA. 
 %The deviation variance and expectation of each estimator are computed based on the
 %1000 trials and plotted separately.
 %This generates a single plot (corresponding to a single p and Mahalanobis distance) of error metric against n from Figure 1. 
 
+%%%%%%The error metrics are relative to the RLDA true error%%%%%%
+
+close all
 clear all
 clc
 rng default
 
-p=150;
-vector_n=[30 50 70 90 110 130 150]';
-noTrainingSets=1000;
-delta2=9;
+p=150;%dimension of sample data
+r=10;%reduced dimension when applying random projection
+vector_n=[30 50 70 90 110 130 150]';%vector of varying total number of samples
+noTrainingSets=1000;%we will estimate error over these training sets
+delta2=9;%Mahalanobis distance squared
 c=0;
 kappa=1;
 gamma=1;
+alpha0=0.5;%because c=0 (see paper for how to compute this from c)
+alpha1=1-alpha0;
+
 
 vector_trueErrorRLDA=zeros(noTrainingSets,1);
 vector_pluginErrorRLDA=zeros(noTrainingSets,1);
 vector_dasymEst=zeros(noTrainingSets,1);
-vector_resubError=zeros(noTrainingSets,1);
-vector_expectedError=zeros(length(vector_n),4);
-vector_variance=zeros(length(vector_n),4);
-vector_devVariance=zeros(length(vector_n),3);%this does not apply to true error
-vector_bias=zeros(length(vector_n),3);%this does not apply to true error
-vector_RMS=zeros(length(vector_n),3);%this does not apply to true error
-alpha0=0.5; %because c=0 (see paper for how to compute this from c)
-alpha1=1-alpha0;
+vector_resubError_RLDA=zeros(noTrainingSets,1);
+vector_resubError_randProjGaussianLDA=zeros(noTrainingSets,1);
+vector_expectedError=zeros(length(vector_n),5);
+vector_variance=zeros(length(vector_n),5);
+vector_devVariance=zeros(length(vector_n),4);%this does not apply to true error
+vector_bias=zeros(length(vector_n),4);%this does not apply to true error
+vector_RMS=zeros(length(vector_n),4);%this does not apply to true error
 
 for i=1:length(vector_n)
    for trainingSetNo=1:noTrainingSets
@@ -49,38 +53,50 @@ for i=1:length(vector_n)
        %compute generalized consistent estimator (double asymptotic) 
        vector_dasymEst(trainingSetNo)=dasymEst(alpha0,alpha1,n0,n1,xBar0,xBar1,C,H,c,kappa,gamma);
        %compute resubstitution error of RLDA
-       vector_resubError(trainingSetNo)=resubError(xBar0,xBar1,H,X0,X1,n0,n1,vector_n(i),c,kappa);
+       vector_resubError_RLDA(trainingSetNo)=resubError_RLDA(xBar0,xBar1,H,X0,X1,n0,n1,vector_n(i),c,kappa);
+       %compute the resubstitution error of random projection with a
+       %Gaussian matrix followed by lDA
+       vector_resubError_randProjGaussianLDA(trainingSetNo)=resubError_randProjGaussianLDA(r,X0,X1,n0,n1,vector_n(i),c);
        
    end
    vector_expectedError(i,1)=mean(vector_trueErrorRLDA); %rows correspond to specific n values while columns correspond to specific estimators
    vector_expectedError(i,2)=mean(vector_pluginErrorRLDA);
    vector_expectedError(i,3)=mean(vector_dasymEst);
-   vector_expectedError(i,4)=mean(vector_resubError);
+   vector_expectedError(i,4)=mean(vector_resubError_RLDA);
+   vector_expectedError(i,5)=mean(vector_resubError_randProjGaussianLDA);
    vector_bias(i,1)=vector_expectedError(i,2)-vector_expectedError(i,1);
    vector_bias(i,2)=vector_expectedError(i,3)-vector_expectedError(i,1);
    vector_bias(i,3)=vector_expectedError(i,4)-vector_expectedError(i,1);
+   vector_bias(i,4)=vector_expectedError(i,5)-vector_expectedError(i,1);
    
    vector_variance(i,1)=var(vector_trueErrorRLDA);%rows correspond to specific n values while columns correspond to specific estimators
    vector_variance(i,2)=var(vector_pluginErrorRLDA);
    vector_variance(i,3)=var(vector_dasymEst);
-   vector_variance(i,4)=var(vector_resubError);
+   vector_variance(i,4)=var(vector_resubError_RLDA);
+   vector_variance(i,5)=var(vector_resubError_randProjGaussianLDA);
    cov12=corr(vector_trueErrorRLDA,vector_pluginErrorRLDA)*sqrt(vector_variance(i,1)*vector_variance(i,2));
    cov13=corr(vector_trueErrorRLDA,vector_dasymEst)*sqrt(vector_variance(i,1)*vector_variance(i,3));
-   cov14=corr(vector_trueErrorRLDA,vector_resubError)*sqrt(vector_variance(i,1)*vector_variance(i,4));
+   cov14=corr(vector_trueErrorRLDA,vector_resubError_RLDA)*sqrt(vector_variance(i,1)*vector_variance(i,4));
+   cov15=corr(vector_trueErrorRLDA,vector_resubError_randProjGaussianLDA)*sqrt(vector_variance(i,1)*vector_variance(i,5));
    
    vector_devVariance(i,1)=vector_variance(i,1)+vector_variance(i,2)-2*cov12;%note that the true error column is omitted here
    vector_devVariance(i,2)=vector_variance(i,1)+vector_variance(i,3)-2*cov13;
    vector_devVariance(i,3)=vector_variance(i,1)+vector_variance(i,4)-2*cov14;
+   vector_devVariance(i,4)=vector_variance(i,1)+vector_variance(i,5)-2*cov15;
    vector_RMS(i,1)=sqrt(vector_bias(i,1)^2+vector_devVariance(i,1)^2);
    vector_RMS(i,2)=sqrt(vector_bias(i,2)^2+vector_devVariance(i,2)^2);
    vector_RMS(i,3)=sqrt(vector_bias(i,3)^2+vector_devVariance(i,3)^2);
+   vector_RMS(i,4)=sqrt(vector_bias(i,4)^2+vector_devVariance(i,4)^2);
 end
 
-plot(repmat(vector_n,1,4),vector_expectedError)
-legend('true error','plug-in','dasym-est','resub')
+plot(repmat(vector_n,1,5),vector_expectedError)
+title('Expected error')
+legend('true error','plug-in','dasym-est','resub-RLDA','resub-RPgaussLDA')
 figure
-plot(repmat(vector_n,1,3), vector_devVariance)
-legend('plug-in','dasym-est','resub')
+plot(repmat(vector_n,1,4), vector_devVariance)
+title('Deviation variance')
+legend('plug-in','dasym-est','resub-RLDA','resub-RPgaussLDA')
 figure
-plot(repmat(vector_n,1,3),vector_RMS)
-legend('plug-in','dasym-est','resub')
+plot(repmat(vector_n,1,4),vector_RMS)
+title('RMS')
+legend('plug-in','dasym-est','resub-RLDA','resub-RPgaussLDA')
