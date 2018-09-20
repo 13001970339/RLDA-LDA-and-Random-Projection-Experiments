@@ -18,7 +18,7 @@ function [mu0,mu1,X0,X1,n0,n1]=trainingSampleGenerator(p,n,Sigma,alpha0,delta2)
     mu1=ones(p,1);
     mu0=mu1;
     mu0(4)=5;
-   mu0(10)=5;
+    mu0(10)=5;
     %generate training data
     n0=ceil(alpha0*n); %according to the paper, this is how you choose n0 and n1 for a given n when using stratified sampling 
     n1=n-n0;

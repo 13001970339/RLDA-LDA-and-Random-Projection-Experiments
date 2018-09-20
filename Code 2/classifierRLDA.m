@@ -11,12 +11,12 @@ function e=classifierRLDA(xBar0,xBar1,H,X0,X1,n0,n1,n,c,kappa)
     %of errors
     noErrors=0;
     for i=1:n0
-        if(discriminant(X0(i))<=c)%if class 0 sample classifies to class 1 increment noErrors
+        if(discriminant(X0(:,i))<=c)%if class 0 sample classifies to class 1 increment noErrors
             noErrors=noErrors+1;
         end
     end
     for j=1:n1
-        if(discriminant(X1(j))>c)%if class 1 sample classifies to class 0 increment noErrors
+        if(discriminant(X1(:,j))>c)%if class 1 sample classifies to class 0 increment noErrors
             noErrors=noErrors+1;
         end
     end

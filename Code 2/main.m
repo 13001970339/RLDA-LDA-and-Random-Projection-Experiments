@@ -14,12 +14,17 @@ kappa=1;
 gamma=1;
 alpha0=0.5;%because c=0 (see paper for how to compute this from c)
 alpha1=1-alpha0;
+mu_diff=0;
+M=51;
 
 %specify the common covariance matrix
-% Sigma=ones(p)*0.1+eye(p)*0.9; %diagonal entries are 1 and off-diagonal entries are 0.1
-Sigma=2*eye(p);
+%Sigma=ones(p)*0.1+eye(p)*0.9; %diagonal entries are 1 and off-diagonal entries are 0.1
+% Sigma=2*eye(p);
 % s=abs(randn(1,p))*10;
 % Sigma=diag(s);
+ eyematrix=eye(p);
+Xm=randn(p,round(sqrt(p)));
+Sigma=eyematrix+Xm*Xm'/p;
     
 %generate the training data and compute the statistics (estimates) for training the RLDA classifier
 [mu0,mu1,X0,X1,n0,n1]=trainingSampleGenerator(p,n,Sigma,alpha0,delta2);
@@ -29,7 +34,9 @@ C=pooledSampleCovariance(X0,X1,xBar0,xBar1,n0,n1);
 H=inv(eye(p)+gamma*C);
 
 %project the training data and compute the statistics (estimates) for training the LDA classifier
-[R,U,r]=randProjGaussian(k,p);
+% [R,U,r]=randProjGaussian(k,p);
+ensemble=randn(k,p,M)/sqrt(k);%to store all of the random matrices
+R=ensemble(:,:,1);
 X0_RP=R*X0;%project both class training sets to the same subspace
 X1_RP=R*X1;
 xBar0_RP=sum(X0_RP,2)/n0; 
@@ -44,9 +51,9 @@ n1_test=n_test-n0_test;
 [X0_test,X1_test]=testSampleGenerator(p,n_test,n0_test,n1_test,mu0,mu1,Sigma,Sigma);%in this case I drew samples from the same distribution as the training data 
   
 %compute the misclassification rate for each classifier
-e_RLDA=classifierRLDA(xBar0,xBar1,H,X0_test,X1_test,n0,n1,n,c,kappa);
+e_RLDA=classifierRLDA(xBar0,xBar1,H,X0_test,X1_test,n0_test,n1_test,n_test,c,kappa);
 X0_test_RP=R*X0_test;%project test data (using same projection) before applying the LDA classifier trained on projected data
 X1_test_RP=R*X1_test;
-e_RPplusLDA=classifierLDA(xBar0_RP,xBar1_RP,C_RP,X0_test_RP,X1_test_RP,n0_test,n1_test,n_test,c);
-
+e_RPplusLDA=classifierLDA(xBar0_RP,xBar1_RP,inv(C_RP),X0_test_RP,X1_test_RP,n0_test,n1_test,n_test,c);
+e=classifierEnsembleRPplusLDA(ensemble,X0,X1,X0_test,X1_test,k,p,M,mu_diff,n0,n1,n0_test,n1_test,n_test);
 
